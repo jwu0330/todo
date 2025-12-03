@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeBlock Scheduler</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="btn-toggle-sidebar" id="toggleSidebar" title="收起/展開側欄">
+                <span class="toggle-icon">☰</span>
+            </button>
+            <h1 class="plan-name" id="planName">新計畫</h1>
+            <button class="btn-icon" id="editPlanName" title="重新命名">✏️</button>
+        </div>
+        <div class="header-right">
+            <button class="btn-break" id="addBreak" title="新增休息時間">☕ 休息 5 分鐘</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Waiting Area (Left Sidebar) -->
+        <aside class="waiting-area">
+            <div class="waiting-header">
+                <h2>等待區</h2>
+                <button class="btn-primary" id="addTask">+ 新增任務</button>
+            </div>
+            <div class="task-list" id="taskList">
+                <!-- Tasks will be added here dynamically -->
+            </div>
+        </aside>
+
+        <!-- Timeline (Center) -->
+        <section class="timeline-container">
+            <div class="timeline" id="timeline">
+                <!-- Timeline slots will be generated here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer (Plan Tabs) -->
+    <footer class="footer">
+        <div class="plan-tabs" id="planTabs">
+            <!-- Plan tabs will be added here dynamically -->
+        </div>
+        <button class="btn-new-plan" id="newPlan">+ 新計畫</button>
+        <button class="btn-icon settings-btn" id="settingsBtn" title="查看封存">📦</button>
+    </footer>
+
+    <!-- Context Menu for Plan Tabs -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" id="contextArchive">📦 封存計畫</div>
+        <div class="context-menu-item" id="contextDelete">🗑️ 刪除計畫</div>
+    </div>
+
+    <!-- Modal: Add Task -->
+    <div class="modal" id="addTaskModal">
+        <div class="modal-content">
+            <h3>新增任務</h3>
+            <form id="addTaskForm">
+                <div class="form-group">
+                    <label for="taskName">任務名稱 *</label>
+                    <input type="text" id="taskName" required>
+                </div>
+                <div class="form-group">
+                    <label for="taskDuration">時間 *</label>
+                    <div class="duration-input">
+                        <select id="taskHours">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                        </select>
+                        <span>小時</span>
+                        <select id="taskMinutes">
+                            <option value="0">0</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="25">25</option>
+                            <option value="30">30</option>
+                            <option value="35">35</option>
+                            <option value="40">40</option>
+                            <option value="45">45</option>
+                            <option value="50">50</option>
+                            <option value="55">55</option>
+                        </select>
+                        <span>分鐘</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="taskNote">備註（可選）</label>
+                    <textarea id="taskNote" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancelTask">取消</button>
+                    <button type="submit" class="btn-primary">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Settings (Archived Plans) -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3>封存的計畫</h3>
+            <div class="archived-list" id="archivedList">
+                <!-- Archived plans will be listed here -->
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" id="closeSettings">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Confirm Delete -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <h3>確認刪除</h3>
+            <p>確定要刪除此計畫嗎？此操作無法復原。</p>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" id="cancelDelete">取消</button>
+                <button type="button" class="btn-danger" id="confirmDelete">刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
