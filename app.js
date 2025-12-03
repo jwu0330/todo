@@ -1,18 +1,18 @@
 // ===== Constants =====
 const COLORS = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
-    '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788',
-    '#E63946', '#F77F00', '#06FFC5', '#118AB2', '#073B4C',
-    '#FFB4A2', '#E5989B', '#B5838D', '#6D6875', '#FFCDB2',
-    '#FFB4A2', '#E5989B', '#B5838D', '#6D6875', '#B8F2E6',
-    '#FFA69E', '#FAF3DD', '#C8D5B9', '#8FC0A9', '#68B0AB',
-    '#4A90A4', '#3D5A80', '#EE6C4D', '#F38D68', '#662E9B',
-    '#EA698B', '#AC3931', '#571F4E', '#F4A261', '#2A9D8F'
+    '#F5E6D3', '#E8DCC8', '#D4C5A9', '#C9B896', '#B5A482',
+    '#FFE5B4', '#FFDAB9', '#FFE4C4', '#F5DEB3', '#EEE8AA',
+    '#E0F2F7', '#B3E5FC', '#81D4FA', '#4FC3F7', '#29B6F6',
+    '#E1BEE7', '#CE93D8', '#BA68C8', '#AB47BC', '#9C27B0',
+    '#C8E6C9', '#A5D6A7', '#81C784', '#66BB6A', '#4CAF50',
+    '#FFCCBC', '#FFAB91', '#FF8A65', '#FF7043', '#FF5722',
+    '#F0E68C', '#DDA0DD', '#D8BFD8', '#DDA0DD', '#EE82EE',
+    '#B0C4DE', '#ADD8E6', '#87CEEB', '#87CEFA', '#00BFFF'
 ];
 
-const MIN_BLOCK_HEIGHT = 10; // 最小顯示單位：10分鐘
+const MIN_BLOCK_HEIGHT = 15; // 最小顯示單位：15分鐘
 const TIME_SNAP = 5; // 對齊刻度：5分鐘
-const SLOT_HEIGHT = 60; // 每個時間槽高度（10分鐘）
+const SLOT_HEIGHT = 90; // 每個時間槽高度（15分鐘）
 const DEFAULT_PLAN_DURATION = 120; // 預設計畫時長：2小時
 const MAX_UNDO_STEPS = 3; // 最多記錄3步
 
@@ -530,11 +530,11 @@ function renderTimeline() {
     if (!plan) return;
     
     const totalMinutes = plan.timelineEnd - plan.timelineStart;
-    const numSlots = totalMinutes / 10; // 每個槽10分鐘
+    const numSlots = totalMinutes / 15; // 每個槽15分鐘
     
     // 創建時間槽
     for (let i = 0; i < numSlots; i++) {
-        const slotMinutes = plan.timelineStart + (i * 10);
+        const slotMinutes = plan.timelineStart + (i * 15);
         const timeSlot = document.createElement('div');
         timeSlot.className = 'time-slot';
         timeSlot.dataset.minutes = slotMinutes;
@@ -571,8 +571,8 @@ function renderTimeline() {
         const endMinutes = timeToMinutes(block.end);
         const duration = endMinutes - startMinutes;
         
-        const topOffset = ((startMinutes - plan.timelineStart) / 10) * SLOT_HEIGHT;
-        const height = (duration / 10) * SLOT_HEIGHT;
+        const topOffset = ((startMinutes - plan.timelineStart) / 15) * SLOT_HEIGHT;
+        const height = (duration / 15) * SLOT_HEIGHT;
         
         const blockEl = document.createElement('div');
         blockEl.className = 'task-block';
@@ -601,6 +601,12 @@ function renderTimeline() {
         });
         blockEl.addEventListener('dragend', handleDragEnd);
         
+        // 右鍵選單
+        blockEl.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showBlockContextMenu(e, block.blockId);
+        });
+        
         timeline.appendChild(blockEl);
     });
     
@@ -620,7 +626,7 @@ function renderCurrentTimeIndicator() {
         const indicator = document.createElement('div');
         indicator.className = 'current-time-indicator';
         
-        const topOffset = ((currentMinutes - plan.timelineStart) / 10) * SLOT_HEIGHT;
+        const topOffset = ((currentMinutes - plan.timelineStart) / 15) * SLOT_HEIGHT;
         indicator.style.top = `${topOffset}px`;
         
         timeline.appendChild(indicator);
@@ -683,6 +689,84 @@ function toggleSidebar() {
     } else {
         sidebar.classList.remove('collapsed');
     }
+}
+
+// ===== Block Context Menu =====
+let blockContextMenuId = null;
+
+function showBlockContextMenu(e, blockId) {
+    e.preventDefault();
+    const menu = document.getElementById('blockContextMenu');
+    blockContextMenuId = blockId;
+    
+    menu.style.left = `${e.pageX}px`;
+    menu.style.top = `${e.pageY}px`;
+    menu.classList.add('active');
+}
+
+function hideBlockContextMenu() {
+    const menu = document.getElementById('blockContextMenu');
+    menu.classList.remove('active');
+    blockContextMenuId = null;
+}
+
+function adjustBlockDuration(minutes) {
+    if (!blockContextMenuId) return;
+    
+    const plan = getCurrentPlan();
+    if (!plan) return;
+    
+    const block = plan.blocks.find(b => b.blockId === blockContextMenuId);
+    if (!block) return;
+    
+    addToUndoStack();
+    
+    const startMinutes = timeToMinutes(block.start);
+    let endMinutes = timeToMinutes(block.end);
+    
+    // 調整結束時間
+    endMinutes += minutes;
+    
+    // 確保最小時長為 5 分鐘
+    if (endMinutes - startMinutes < 5) {
+        alert('區塊時長不能少於 5 分鐘');
+        hideBlockContextMenu();
+        return;
+    }
+    
+    // 檢查是否超出時間軸範圍
+    if (endMinutes > plan.timelineEnd) {
+        // 自動延長時間軸
+        plan.timelineEnd = endMinutes;
+    }
+    
+    // 檢查是否與其他區塊重疊
+    const hasOverlap = plan.blocks.some(b => {
+        if (b.blockId === blockContextMenuId) return false;
+        const bStart = timeToMinutes(b.start);
+        const bEnd = timeToMinutes(b.end);
+        return (startMinutes < bEnd && endMinutes > bStart);
+    });
+    
+    if (hasOverlap) {
+        alert('調整後會與其他區塊重疊');
+        hideBlockContextMenu();
+        return;
+    }
+    
+    // 更新區塊
+    block.end = minutesToTime(endMinutes);
+    
+    // 更新任務時長（如果這是唯一的區塊）
+    const task = getTaskById(block.taskId);
+    const taskBlocks = plan.blocks.filter(b => b.taskId === block.taskId);
+    if (taskBlocks.length === 1 && task) {
+        task.duration = endMinutes - startMinutes;
+    }
+    
+    saveState();
+    renderAll();
+    hideBlockContextMenu();
 }
 
 // ===== Confirm Dialog =====
@@ -868,6 +952,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('closeSettings').addEventListener('click', () => {
         closeModal('settingsModal');
+    });
+    
+    // Block context menu
+    document.getElementById('blockExtend5').addEventListener('click', () => adjustBlockDuration(5));
+    document.getElementById('blockExtend10').addEventListener('click', () => adjustBlockDuration(10));
+    document.getElementById('blockExtend15').addEventListener('click', () => adjustBlockDuration(15));
+    document.getElementById('blockShrink5').addEventListener('click', () => adjustBlockDuration(-5));
+    document.getElementById('blockShrink10').addEventListener('click', () => adjustBlockDuration(-10));
+    document.getElementById('blockShrink15').addEventListener('click', () => adjustBlockDuration(-15));
+    
+    // Hide block context menu on outside click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.block-context-menu') && !e.target.closest('.task-block')) {
+            hideBlockContextMenu();
+        }
     });
     
     // Confirm dialog
