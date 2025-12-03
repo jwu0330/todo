@@ -17,7 +17,7 @@
             <button class="btn-icon" id="editPlanName" title="重新命名">✏️</button>
         </div>
         <div class="header-right">
-            <button class="btn-break" id="addBreak" title="新增休息時間">☕ 休息 5 分鐘</button>
+            <button class="btn-break" id="addBreak" title="新增休息時間">休息 5 分鐘</button>
         </div>
     </header>
 
@@ -51,10 +51,17 @@
         <button class="btn-icon settings-btn" id="settingsBtn" title="查看封存">📦</button>
     </footer>
 
-    <!-- Context Menu for Plan Tabs -->
-    <div class="context-menu" id="contextMenu">
-        <div class="context-menu-item" id="contextArchive">📦 封存計畫</div>
-        <div class="context-menu-item" id="contextDelete">🗑️ 刪除計畫</div>
+    <!-- Confirm Dialog -->
+    <div class="confirm-dialog" id="confirmDialog">
+        <div class="confirm-dialog-content">
+            <div class="confirm-dialog-title" id="confirmTitle">確認操作</div>
+            <div class="confirm-dialog-message" id="confirmMessage">您確定要執行此操作嗎？</div>
+            <div class="confirm-dialog-buttons">
+                <button class="btn-cancel" id="confirmCancel">取消</button>
+                <button class="btn-archive" id="confirmArchive" style="display:none;">封存</button>
+                <button class="btn-delete" id="confirmDeleteBtn" style="display:none;">刪除</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal: Add Task -->

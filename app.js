@@ -465,9 +465,21 @@ function renderPlanTabs() {
         if (plan.id === state.currentPlanId) {
             tab.classList.add('active');
         }
-        tab.textContent = plan.name;
-        tab.onclick = () => switchPlan(plan.id);
-        tab.oncontextmenu = (e) => showContextMenu(e, plan.id);
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = plan.name;
+        nameSpan.onclick = () => switchPlan(plan.id);
+        
+        const closeBtn = document.createElement('span');
+        closeBtn.className = 'plan-tab-close';
+        closeBtn.textContent = '×';
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            showConfirmDialog(plan.id);
+        };
+        
+        tab.appendChild(nameSpan);
+        tab.appendChild(closeBtn);
         tabsContainer.appendChild(tab);
     });
 }
@@ -673,23 +685,55 @@ function toggleSidebar() {
     }
 }
 
-// ===== Context Menu =====
-let contextMenuPlanId = null;
+// ===== Confirm Dialog =====
+let confirmDialogPlanId = null;
+let confirmDialogAction = null;
 
-function showContextMenu(e, planId) {
-    e.preventDefault();
-    const contextMenu = document.getElementById('contextMenu');
-    contextMenuPlanId = planId;
+function showConfirmDialog(planId) {
+    confirmDialogPlanId = planId;
+    const dialog = document.getElementById('confirmDialog');
+    const title = document.getElementById('confirmTitle');
+    const message = document.getElementById('confirmMessage');
+    const archiveBtn = document.getElementById('confirmArchive');
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
     
-    contextMenu.style.left = `${e.pageX}px`;
-    contextMenu.style.top = `${e.pageY}px`;
-    contextMenu.classList.add('active');
+    title.textContent = '計畫操作';
+    message.textContent = '請選擇您要執行的操作：';
+    archiveBtn.style.display = 'block';
+    deleteBtn.style.display = 'block';
+    
+    dialog.classList.add('active');
 }
 
-function hideContextMenu() {
-    const contextMenu = document.getElementById('contextMenu');
-    contextMenu.classList.remove('active');
-    contextMenuPlanId = null;
+function hideConfirmDialog() {
+    const dialog = document.getElementById('confirmDialog');
+    dialog.classList.remove('active');
+    confirmDialogPlanId = null;
+    confirmDialogAction = null;
+}
+
+function confirmAction(action) {
+    if (!confirmDialogPlanId) return;
+    
+    if (action === 'archive') {
+        archivePlan(confirmDialogPlanId);
+        hideConfirmDialog();
+    } else if (action === 'delete') {
+        // 顯示二次確認
+        const title = document.getElementById('confirmTitle');
+        const message = document.getElementById('confirmMessage');
+        const archiveBtn = document.getElementById('confirmArchive');
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        
+        title.textContent = '確認刪除';
+        message.textContent = '確定要刪除此計畫嗎？此操作無法復原。';
+        archiveBtn.style.display = 'none';
+        deleteBtn.textContent = '確定刪除';
+        confirmDialogAction = 'delete-confirm';
+    } else if (action === 'delete-confirm') {
+        deletePlan(confirmDialogPlanId);
+        hideConfirmDialog();
+    }
 }
 
 // ===== Add Break =====
@@ -826,27 +870,36 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal('settingsModal');
     });
     
-    // Context menu
-    document.getElementById('contextArchive').addEventListener('click', () => {
-        if (contextMenuPlanId) {
-            archivePlan(contextMenuPlanId);
-            hideContextMenu();
-        }
+    // Confirm dialog
+    document.getElementById('confirmCancel').addEventListener('click', hideConfirmDialog);
+    
+    document.getElementById('confirmArchive').addEventListener('click', () => {
+        confirmAction(confirmDialogAction === 'delete-confirm' ? 'delete-confirm' : 'archive');
     });
     
-    document.getElementById('contextDelete').addEventListener('click', () => {
-        if (contextMenuPlanId) {
-            if (confirm('確定要刪除此計畫嗎？此操作無法復原。')) {
-                deletePlan(contextMenuPlanId);
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+        confirmAction(confirmDialogAction === 'delete-confirm' ? 'delete-confirm' : 'delete');
+    });
+    
+    // Keyboard support for confirm dialog
+    document.addEventListener('keydown', (e) => {
+        const dialog = document.getElementById('confirmDialog');
+        if (dialog.classList.contains('active')) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (confirmDialogAction === 'delete-confirm') {
+                    confirmAction('delete-confirm');
+                }
+            } else if (e.key === 'Escape') {
+                hideConfirmDialog();
             }
-            hideContextMenu();
         }
     });
     
-    // Hide context menu on click outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.context-menu') && !e.target.closest('.plan-tab')) {
-            hideContextMenu();
+    // Close dialog on outside click
+    document.getElementById('confirmDialog').addEventListener('click', (e) => {
+        if (e.target.id === 'confirmDialog') {
+            hideConfirmDialog();
         }
     });
     
