@@ -491,29 +491,31 @@ function renderWaitingArea() {
     const plan = getCurrentPlan();
     if (!plan) return;
     
+    // 渲染任務和碎片（排除休息時間）
     plan.tasks.forEach(task => {
-        const remaining = calculateRemainingDuration(task.taskId);
+        // 跳過休息時間，不顯示在等待區
+        if (task.name === '休息時間') return;
+        
+        const taskBlocks = plan.blocks.filter(b => b.taskId === task.taskId);
+        const totalDuration = taskBlocks.reduce((sum, block) => {
+            return sum + (timeToMinutes(block.end) - timeToMinutes(block.start));
+        }, 0);
+        const remaining = task.duration - totalDuration;
         
         if (remaining > 0) {
             const taskItem = document.createElement('div');
             taskItem.className = 'task-item';
             taskItem.draggable = true;
-            taskItem.style.borderColor = task.color;
-            
-            const hours = Math.floor(remaining / 60);
-            const minutes = remaining % 60;
-            let durationText = '';
-            if (hours > 0) durationText += `${hours}小時`;
-            if (minutes > 0) durationText += `${minutes}分鐘`;
+            taskItem.style.borderLeft = `4px solid ${task.color}`;
             
             taskItem.innerHTML = `
                 <div class="task-name">${task.name}</div>
-                <div class="task-duration">${durationText}</div>
+                <div class="task-duration">${remaining}分鐘</div>
                 ${task.note ? `<div class="task-note">${task.note}</div>` : ''}
             `;
             
             taskItem.addEventListener('dragstart', (e) => {
-                handleDragStart(e, { type: 'task', taskId: task.taskId });
+                handleDragStart(e, { type: 'task', taskId: task.taskId, duration: remaining });
             });
             taskItem.addEventListener('dragend', handleDragEnd);
             
@@ -541,7 +543,12 @@ function renderTimeline() {
         
         const timeLabel = document.createElement('div');
         timeLabel.className = 'time-label';
-        timeLabel.textContent = minutesToTime(slotMinutes);
+        // 只顯示整點時間
+        if (slotMinutes % 60 === 0) {
+            timeLabel.textContent = minutesToTime(slotMinutes);
+        } else {
+            timeLabel.textContent = '';
+        }
         
         const timeContent = document.createElement('div');
         timeContent.className = 'time-content';
